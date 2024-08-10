@@ -1,26 +1,36 @@
 ﻿using Microsoft.Extensions.Logging;
-using Telegram.Bot;
 
-namespace TelegramBot.Handlers
+namespace TelegramBot.Handlers;
+
+/// <summary>
+/// Класс-обработчик ошибок.
+/// </summary>
+public class ErrorHandler
 {
-    public class ErrorHandler
+    /// <summary>
+    /// Логер.
+    /// </summary>
+    private readonly ILogger<ErrorHandler> _logger;
+
+    /// <summary>
+    /// Конструктор.
+    /// </summary>
+    /// <param name="logger">Логер.</param>
+    public ErrorHandler(ILogger<ErrorHandler> logger)
     {
-        private readonly ILogger<ErrorHandler> _logger;
-        private readonly ITelegramBotClient _client;
+        _logger = logger;
+    }
 
-        public ErrorHandler(ILogger<ErrorHandler> logger, ITelegramBotClient client)
-        {
-            _logger = logger;
-            _client = client;
-        }
+    /// <summary>
+    /// Обработчик ошибок.
+    /// </summary>
+    /// <param name="exception">Ошибка.</param>
+    /// <param name="cancellationToken">Токен прекращения работы.</param>
+    /// <returns>Ответ для пользователя.</returns>
+    public async Task<string?> HandleError(Exception exception, CancellationToken cancellationToken)
+    {
+        _logger.LogError(exception, "Ошибка!");
 
-        public async Task<string?> HandleError(Exception exception, CancellationToken cancellationToken)
-        {
-            _logger.LogError(exception, "Ошибка!");
-
-            //await NotifyAdminAsync(exception.Message, cancellationToken);
-
-            return "Извините! Произошла ошибка!";
-        }
+        return "Извините! Произошла ошибка!";
     }
 }

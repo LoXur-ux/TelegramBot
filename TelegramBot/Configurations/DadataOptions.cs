@@ -1,8 +1,16 @@
-﻿namespace TelegramBot.Configurations
+﻿namespace TelegramBot.Configurations;
+
+/// <summary>
+/// Класс для хранения конфигурации для сервиса Dadata.
+/// </summary>
+public class DadataOptions
 {
-    public class DadataOptions
-    {
-        public string Token { get; set; }
-        public string Secret { get; set; }
-    }
+    /// <summary>
+    /// Токен.
+    /// </summary>
+    public string Token { get; set; }
+    /// <summary>
+    /// Секретный ключ.
+    /// </summary>
+    public string Secret { get; set; }
 }

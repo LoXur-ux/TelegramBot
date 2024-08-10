@@ -3,67 +3,76 @@ using Dadata.Model;
 using System.Text;
 using TelegramBot.Services;
 
-namespace TelegramBot.Commands.Handlers
+namespace TelegramBot.Commands.Handlers;
+
+public class INNCommandHandler : ICommandHandler
 {
-    public class INNCommandHandler : ICommandHandler
+    public string Command => "/inn";
+    public string? Data { get; set; }
+    public CommandHistoryService CommandHistoryService { get; set; }
+
+    /// <summary>
+    /// Сеовис для взаимодействия с Dadata.
+    /// </summary>
+    private readonly ISuggestClientAsync _service;
+
+    public INNCommandHandler(ISuggestClientAsync service, CommandHistoryService commandHistoryService)
     {
-        public string Command => "/inn";
-        public string? Data { get; set; }
-        public CommandHistoryService CommandHistoryService { get; set; }
+        _service = service;
+        CommandHistoryService = commandHistoryService;
+    }
 
-        private readonly ISuggestClientAsync _service;
-
-        public INNCommandHandler(ISuggestClientAsync service, CommandHistoryService commandHistoryService)
+    public async Task<string> HandleAsync(long chatId)
+    {
+        // Данные должны быть обязательны
+        if (string.IsNullOrWhiteSpace(Data))
         {
-            _service = service;
-            CommandHistoryService = commandHistoryService;
+            return "Напишите ИНН компании, информацию о которй ищете." +
+                "Например: /inn 7731457980";
         }
 
-        public async Task<string> HandleAsync(long chatId)
+        await SaveCommandInHistory(chatId);
+
+        var inns = Data.Trim().Split(' ');
+        var suggests = new List<SuggestResponse<Party>>();
+
+        try
         {
-            if (string.IsNullOrWhiteSpace(Data))
+            foreach (var inn in inns)
             {
-                return "Напишите ИНН компании, информацию о которй ищете." +
-                    "Например: /inn 7731457980";
+                // Получение данных с сервиса Dadata.
+                var suggest = await _service.SuggestParty(inn.Trim(), 1);
+                suggests.Add(suggest);
             }
-
-            await SaveCommandInHistory(chatId);
-
-            var inns = Data.Trim().Split(' ');
-            var suggests = new List<SuggestResponse<Party>>();
-
-            try
-            {
-                foreach (var inn in inns)
-                {
-                    var suggest = await _service.SuggestParty(inn.Trim(), 1);
-                    suggests.Add(suggest);
-                }
-            }
-            catch (Exception ex) { }
-
-            return GetInfoByParty(suggests);
         }
+        catch (Exception ex) { }
 
-        private string GetInfoByParty(List<SuggestResponse<Party>> suggests)
+        return GetInfoByParty(suggests);
+    }
+
+    /// <summary>
+    /// Преобразование данных в информацию для пользователя.
+    /// </summary>
+    /// <param name="suggests">Данные, полученные по ИНН.</param>
+    /// <returns>Строка, готовая ддя отправки пользователю.</returns>
+    private string GetInfoByParty(List<SuggestResponse<Party>> suggests)
+    {
+        var result = new StringBuilder();
+        foreach (var suggest in suggests)
         {
-            var result = new StringBuilder();
-            foreach (var suggest in suggests)
-            {
-                var party = suggest.suggestions.ElementAt(0);
-                result.Append("ИНН компании: ").Append(party.data.inn).Append(Environment.NewLine);
-                result.Append("Название компании: ").Append(party.value).Append(Environment.NewLine);
-                result.Append("Адрес компании: ").Append(party.data.address.value);
+            var party = suggest.suggestions.ElementAt(0);
+            result.Append("ИНН компании: ").Append(party.data.inn).Append(Environment.NewLine);
+            result.Append("Название компании: ").Append(party.value).Append(Environment.NewLine);
+            result.Append("Адрес компании: ").Append(party.data.address.value);
 
-                result.Append(Environment.NewLine).Append(Environment.NewLine);
-            }
-
-            return result.ToString();
+            result.Append(Environment.NewLine).Append(Environment.NewLine);
         }
 
-        public async Task SaveCommandInHistory(long chatId)
-        {
-            await CommandHistoryService.SaveCommandAsync(chatId, Command, Data);
-        }
+        return result.ToString();
+    }
+
+    public async Task SaveCommandInHistory(long chatId)
+    {
+        await CommandHistoryService.SaveCommandAsync(chatId, Command, Data);
     }
 }

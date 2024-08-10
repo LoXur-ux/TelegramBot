@@ -1,7 +1,12 @@
-﻿namespace TelegramBot.Configurations
+﻿namespace TelegramBot.Configurations;
+
+/// <summary>
+/// Класс для хранения конфигурации для сервиса Телеграм бота.
+/// </summary>
+public class TelegramBotOptions
 {
-    public class TelegramBotOptions
-    {
-        public string Token { get; set; }
-    }
+    /// <summary>
+    /// Токен.
+    /// </summary>
+    public string Token { get; set; }
 }
