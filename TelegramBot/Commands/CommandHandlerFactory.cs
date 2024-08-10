@@ -1,23 +1,33 @@
-﻿namespace TelegramBot.Commands
+﻿using Microsoft.Extensions.DependencyInjection;
+using TelegramBot.Commands.Handlers;
+
+namespace TelegramBot.Commands
 {
     public class CommandHandlerFactory
     {
-        private readonly IEnumerable<ICommandHandler> _handlers;
-        private readonly UnknownCommandHandler _unknownCommandHandler;
+        private readonly IServiceProvider _serviceProvider;
 
-        public CommandHandlerFactory(IEnumerable<ICommandHandler> handlers, UnknownCommandHandler unknownCommandHandler)
+        public CommandHandlerFactory(IServiceProvider serviceProvider)
         {
-            _handlers = handlers;
-            _unknownCommandHandler = unknownCommandHandler;
+            _serviceProvider = serviceProvider;
         }
 
-        public async Task<string?> HandleCommandAsync(string command, string data = "")
+        public async Task<string?> HandleCommandAsync(string command, string data, long chatId)
         {
-            var handler = _handlers.FirstOrDefault(x => x.Command == command);
+            try
+            {
+                var handlers = _serviceProvider.GetServices<ICommandHandler>();
+                var handler = handlers.FirstOrDefault(x => x.Command.Equals(command, StringComparison.OrdinalIgnoreCase));
+                if (handler == null)
+                {
+                    return await _serviceProvider.GetRequiredService<UnknownCommandHandler>().HandleUnknownCommandAsync();
+                }
 
-            return handler != null
-                ? await handler.HandleAsync(data)
-                : await _unknownCommandHandler.HandleUnknownCommandAsync();
+                handler.Data = data;
+                return await handler.HandleAsync(chatId);
+            }
+            catch (Exception ex) { return string.Empty; }
+
         }
     }
 }

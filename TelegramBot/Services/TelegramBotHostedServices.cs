@@ -44,12 +44,11 @@ namespace TelegramBot.Services
             messageText = messageText.ToLower();
             var command = messageText.Split(' ').First();
             var data = messageText.Replace(command, string.Empty);
-            var response = await _commandHandlerFactory.HandleCommandAsync(command, data);
+            var response = await _commandHandlerFactory.HandleCommandAsync(command, data, message.Chat.Id);
 
-            if (response is not null)
-            {
-                await client.SendTextMessageAsync(message.Chat.Id, response, cancellationToken: cancellationToken);
-            }
+            await client.SendTextMessageAsync(message.Chat.Id,
+                string.IsNullOrWhiteSpace(response) ? "К сожалению, требуемой информации не нашлось." : response,
+                cancellationToken: cancellationToken);
         }
 
         private async Task<string?> HandleErrorAsync(ITelegramBotClient client, Exception exception, CancellationToken cancellationToken)

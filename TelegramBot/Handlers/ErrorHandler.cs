@@ -22,24 +22,5 @@ namespace TelegramBot.Handlers
 
             return "Извините! Произошла ошибка!";
         }
-
-        //private async Task NotifyAdminAsync(string errorMassage, CancellationToken cancellationToken)
-        //{
-        //    if (!string.IsNullOrEmpty(_adminChatId))
-        //    {
-        //        try
-        //        {
-        //            await _client.SendTextMessageAsync(_adminChatId, $"Произошла ошибка!\n{errorMassage}", cancellationToken: cancellationToken);
-        //        }
-        //        catch (Exception ex)
-        //        {
-        //            _logger.LogError($"Error: {ex.Message}");
-        //        }
-        //    }
-        //    else
-        //    {
-        //        _logger.LogError("Идентификатор чата с администратором не найден!");
-        //    }
-        //}
     }
 }
