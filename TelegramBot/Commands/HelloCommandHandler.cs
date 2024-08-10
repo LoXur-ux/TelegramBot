@@ -4,9 +4,12 @@
     {
         public string Command => "/hello";
 
-        public async Task<string?> HandleAsync()
+        public async Task<string?> HandleAsync(string data = "")
         {
-            return "Hello World!";
+            var result = "Данил Панишев\n" +
+                "Email: starkaw@yandex.ru\n" +
+                "github: https://github.com/LoXur-ux/TelegramBot";
+            return result;
         }
     }
 }

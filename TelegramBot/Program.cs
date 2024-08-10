@@ -1,4 +1,5 @@
-﻿using Microsoft.Extensions.Configuration;
+﻿using Dadata;
+using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
@@ -27,18 +28,27 @@ namespace TelegramBot
                     var configuration = context.Configuration;
 
                     services.Configure<TelegramBotOptions>(configuration.GetSection("TelegramBot"));
-                    //services.Configure<ApiOptions>(configuration.GetSection("ApiOptions"));
+                    services.Configure<DadataOptions>(configuration.GetSection("DaData"));
 
                     services.AddSingleton<ITelegramBotClient>(provider =>
                     {
-                        var option = provider.GetRequiredService<IOptions<TelegramBotOptions>>();
-                        return new TelegramBotClient(option.Value.Token);
+                        var option = provider.GetRequiredService<IOptions<TelegramBotOptions>>().Value;
+                        return new TelegramBotClient(option.Token);
+                    });
+                    services.AddSingleton<ISuggestClientAsync>(provider =>
+                    {
+                        var option = provider.GetRequiredService<IOptions<DadataOptions>>().Value;
+                        return new SuggestClientAsync(option.Token);
                     });
 
                     services.AddSingleton<ICommandHandler, StartCommandHandler>();
                     services.AddSingleton<ICommandHandler, HelloCommandHandler>();
                     services.AddSingleton<ICommandHandler, HelpCommandHandler>();
-                    services.AddSingleton<ICommandHandler, INNCommandHandler>();
+                    services.AddSingleton<ICommandHandler, INNCommandHandler>(provider =>
+                    {
+                        var service = provider.GetService<ISuggestClientAsync>();
+                        return new INNCommandHandler(service);
+                    });
                     services.AddSingleton<CommandHandlerFactory>();
                     services.AddSingleton<UnknownCommandHandler>();
                     services.AddSingleton<ErrorHandler>(provider =>

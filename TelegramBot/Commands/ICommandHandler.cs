@@ -3,8 +3,6 @@
     public interface ICommandHandler
     {
         string Command {  get; }
-        Task<string> HandleAsync();
-
-        Task Log();
+        Task<string> HandleAsync(string data = "");
     }
 }

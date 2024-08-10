@@ -11,12 +11,12 @@
             _unknownCommandHandler = unknownCommandHandler;
         }
 
-        public async Task<string?> HandleCommandAsync(string command)
+        public async Task<string?> HandleCommandAsync(string command, string data = "")
         {
             var handler = _handlers.FirstOrDefault(x => x.Command == command);
 
             return handler != null
-                ? await handler.HandleAsync()
+                ? await handler.HandleAsync(data)
                 : await _unknownCommandHandler.HandleUnknownCommandAsync();
         }
     }

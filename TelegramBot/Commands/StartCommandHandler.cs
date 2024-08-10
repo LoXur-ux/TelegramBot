@@ -5,14 +5,9 @@ namespace TelegramBot.Commands
     {
         public string Command => "/start";
 
-        public async Task<string> HandleAsync()
+        public async Task<string> HandleAsync(string data = "")
         {
             return "Start";
-        }
-
-        public Task Log()
-        {
-            throw new NotImplementedException();
         }
     }
 }

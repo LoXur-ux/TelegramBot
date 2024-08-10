@@ -40,9 +40,11 @@ namespace TelegramBot.Services
                 return;
             }
 
+            // Подготовка комманды.
             messageText = messageText.ToLower();
-
-            var response = await _commandHandlerFactory.HandleCommandAsync(messageText);
+            var command = messageText.Split(' ').First();
+            var data = messageText.Replace(command, string.Empty);
+            var response = await _commandHandlerFactory.HandleCommandAsync(command, data);
 
             if (response is not null)
             {
