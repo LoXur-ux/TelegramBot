@@ -42,8 +42,11 @@ public class OkvedCommandHandler : ICommandHandler
         var okvedsString = new List<string>();
         try
         {
-            var ttt = await _suggestService.SuggestParty(Data.Trim(), 1);
-            party = ttt?.suggestions?.FirstOrDefault()?.data;
+            party = (await _suggestService.SuggestParty(Data.Trim(), 1))?.suggestions?.FirstOrDefault()?.data;
+            if (party is null) 
+            {
+                return "К сожалению, но данные по указанному ИНН не найдены";
+            }
 
             var okvedsCode = GetOkvedCodes(party);
             var okvedsSuggest = new List<SuggestResponse<OkvedRecord>>();
@@ -51,7 +54,17 @@ public class OkvedCommandHandler : ICommandHandler
             foreach (var code in okvedsCode)
             {
                 var suggestOkved = await _outwardService.Suggest<OkvedRecord>(code, 10);
+                if (suggestOkved is null)
+                {
+                    continue;
+                }
+
                 okvedsSuggest.Add(suggestOkved);
+            }
+
+            if (!okvedsSuggest.Any())
+            {
+                return "К сожалению, коды ОКВЭД не найдены";
             }
 
             foreach (var okved in okvedsSuggest.Select(x => x.suggestions.First().data).OrderByDescending(x => x.name))
@@ -82,7 +95,7 @@ public class OkvedCommandHandler : ICommandHandler
     private string GetInfoByOkved(List<string> okveds, Party party)
     {
         var result = new StringBuilder();
-        result.Append($"Для компании {party.name} (ИНН: {party.inn}) была найдена следюущая информация по ОКВЭД:").Append(Environment.NewLine);
+        result.Append($"Для компании {party.name.short_with_opf} (ИНН: {party.inn}) была найдена следюущая информация по ОКВЭД:").Append(Environment.NewLine);
         okveds.ForEach(x => result.Append(x).Append(Environment.NewLine));
 
         return result.ToString();

@@ -35,7 +35,7 @@ public class LastCommandHandler : ICommandHandler
 
         var factory = _serviceProvider.GetRequiredService<CommandHandlerFactory>();
         var result = await factory.HandleCommandAsync(commandHistory.Command, commandHistory.Data, commandHistory.ChatId);
-        return $"Ваша последняя команда: {commandHistory.Command} ({commandHistory.Created?.ToString("g")}):\n{result}";
+        return $"Ваша последняя команда: \"{commandHistory.Command} {commandHistory.Data}\" ({commandHistory.Created?.ToString("g")}):\n{result}";
     }
 
     public async Task SaveCommandInHistory(long chatId)

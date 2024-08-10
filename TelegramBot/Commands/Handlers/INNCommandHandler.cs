@@ -33,21 +33,28 @@ public class INNCommandHandler : ICommandHandler
 
         await SaveCommandInHistory(chatId);
 
+        var result = string.Empty;
         var inns = Data.Trim().Split(' ');
         var suggests = new List<SuggestResponse<Party>>();
 
         try
         {
-            foreach (var inn in inns)
+            foreach (var inn in inns.Where(x => string.IsNullOrWhiteSpace(x)))
             {
                 // Получение данных с сервиса Dadata.
                 var suggest = await _service.SuggestParty(inn.Trim(), 1);
+                if (suggest is null || !suggest.suggestions.Any())
+                {
+                    result += $"Информации по ИНН {inn} не найдено, возможно, он ошибочный\n";
+                    continue;
+                }
+
                 suggests.Add(suggest);
             }
         }
         catch (Exception ex) { }
 
-        return GetInfoByParty(suggests);
+        return result + GetInfoByParty(suggests);
     }
 
     /// <summary>
