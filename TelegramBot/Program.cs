@@ -1,36 +1,61 @@
-﻿using System.Net.WebSockets;
+﻿using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Hosting;
+using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Options;
 using Telegram.Bot;
-using Telegram.Bot.Types;
+using TelegramBot.Commands;
+using TelegramBot.Configurations;
+using TelegramBot.Handlers;
+using TelegramBot.Services;
+
 namespace TelegramBot
 {
-    internal class Program
+    public class Program
     {
-        static void Main(string[] args)
+        static async Task Main(string[] args)
         {
-            var client = new TelegramBotClient("7492270303:AAGuDO7cHOmQlVN_CQGXkKW-Z6BY33RioGk");
-            client.StartReceiving(Update, Error);
+            var host = Host.CreateDefaultBuilder(args)
+                .ConfigureAppConfiguration((context, config) =>
+                {
+                    config.SetBasePath(Directory.GetCurrentDirectory());
+                    config.AddJsonFile("appsettings.json", false, true);
+                    config.AddUserSecrets<Program>();
+                })
+                .ConfigureServices((context, services) =>
+                {
+                    var configuration = context.Configuration;
+
+                    services.Configure<TelegramBotOptions>(configuration.GetSection("TelegramBot"));
+                    //services.Configure<ApiOptions>(configuration.GetSection("ApiOptions"));
+
+                    services.AddSingleton<ITelegramBotClient>(provider =>
+                    {
+                        var option = provider.GetRequiredService<IOptions<TelegramBotOptions>>();
+                        return new TelegramBotClient(option.Value.Token);
+                    });
+
+                    services.AddSingleton<ICommandHandler, StartCommandHandler>();
+                    services.AddSingleton<ICommandHandler, HelloCommandHandler>();
+                    services.AddSingleton<ICommandHandler, HelpCommandHandler>();
+                    services.AddSingleton<ICommandHandler, INNCommandHandler>();
+                    services.AddSingleton<CommandHandlerFactory>();
+                    services.AddSingleton<UnknownCommandHandler>();
+                    services.AddSingleton<ErrorHandler>(provider =>
+                    {
+                        var logger = provider.GetRequiredService<ILogger<ErrorHandler>>();
+                        var client = provider.GetRequiredService<ITelegramBotClient>();
+                        var configuration = provider.GetRequiredService<IConfiguration>();
+                        return new ErrorHandler(logger, client);
+                    });
+
+                    services.AddHostedService<TelegramBotHostedServices>();
+                })
+                .Build();
+
+            await host.StartAsync();
 
             Console.ReadLine();
         }
-
-        private static async Task Update(ITelegramBotClient client, Update update, CancellationToken token)
-        {
-            var message = update.Message;
-
-            if (message == null)
-            {
-                return;
-            }
-
-            if (message.Text is string text && text.Contains("привет", StringComparison.CurrentCultureIgnoreCase))
-            {
-                Console.WriteLine($"{message.Chat.FirstName} ({message.Type}): {text}");
-                await client.SendTextMessageAsync(message.Chat.Id, "Добрый день!");
-                return;
-            }
-        }
-
-        private static async Task Error(ITelegramBotClient client, Exception exception, CancellationToken token)
-        { }
     }
 }
